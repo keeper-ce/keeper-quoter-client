@@ -3,14 +3,14 @@ import { RouterLink, RouterView } from 'vue-router'
 </script>
 
 <template>
-  <header>
+  <!-- <header>
     <div class="wrapper">
       <nav>
         <RouterLink to="/">Главная</RouterLink>
         <RouterLink to="/quote">Цитатник</RouterLink>
       </nav>
     </div>
-  </header>
+  </header> -->
 
   <RouterView />
 </template>
@@ -52,7 +52,7 @@ nav a:first-of-type {
 }
 
 @media (min-width: 1024px) {
-  header {
+  /* header {
     display: flex;
     place-items: center;
     padding-right: calc(var(--section-gap) / 2);
@@ -60,7 +60,7 @@ nav a:first-of-type {
 
   .logo {
     margin: 0 2rem 0 0;
-  }
+  } */
 
   header .wrapper {
     display: flex;
