@@ -1,16 +1,9 @@
 /**
- * 
+ * Рандомизация элементов массива по порядку.
  * @param {Array<T>} array
- * @returns {T}
+ * @return {Array<T>}
  */
-export const getRanomFromArray = (array) => {
-    return array[getRandomArrayIndex(array)]
-}
-
-/**
- * 
- * @param {Array<unknown>} array
- */
-export const getRandomArrayIndex = (array) => {
-    return Math.floor(Math.random()*array.length)
-}
+export const shuffleArray = (array) => array
+    .map(value => ({value, sort: Math.random()}))
+    .sort((a, b) => a.sort - b.sort)
+    .map(({value}) => value);

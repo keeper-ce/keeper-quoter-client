@@ -1,5 +1,3 @@
-
-const mockImage = 'https://oir.mobi/uploads/posts/2021-06/1623333089_4-oir_mobi-p-so-snezhnim-utrom-priroda-krasivo-foto-5.jpg'
 import OlbertImage from '../assets/images/quotesImages/Olbert.jpg'
 import YurijImage from '../assets/images/quotesImages/Yurij.jpg'
 import SeregaFImage from '../assets/images/quotesImages/SeregaF.jpg'

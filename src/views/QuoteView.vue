@@ -1,63 +1,78 @@
 <script setup>
-import { onBeforeUnmount, ref, toRaw } from 'vue';
-import { QuotesList } from '../data/quotes'
-import { getRanomFromArray, } from '../services/utils'
+import {onBeforeUnmount, ref} from 'vue';
+import {QuotesList} from '../data/quotes'
+import {shuffleArray,} from '../services/utils'
+import AnimationQuoteService from "../services/AnimationQuoteService";
+import {TIME_FOR_QUOTE_AUTOCHANGE_SHOWING} from "../config/quote/animation";
 
-const quote = ref(getRanomFromArray(QuotesList));
+/** Пересортированные данные цитат для сессии пользователя */
+const quoteBuffer = shuffleArray(QuotesList);
+
+/** @param {{value: number}} quote Номер текущей цитаты */
+const quoteIndex = ref(0);
+
+/** @param {{value: boolean}} show Отображение картинки и цитаты или анимация перехода */
 const show = ref(false);
-setTimeout(() => {
-  show.value = true;
-}, 0);
 
+/** Текущий объект цитаты, котоырй мы отрисовываем */
+let currentQuote = quoteBuffer[quoteIndex.value];
+
+/** Текущий таймер, по которому происходит смена цитат */
 let interval;
-let showTimer;
-let hideTimer;
 
+/** Сервис для анимации цитат */
+const animationService = new AnimationQuoteService(show);
+
+/** Чистим таймеры, перед тем как размаунтить компонент страницы */
 onBeforeUnmount(() => {
+  clearInterval(interval)
+  animationService.kill();
+});
+
+/** Получить индекс предыдущей цитаты */
+const getPrevQuoteIndex = () => quoteIndex.value - 1 < 0 ? quoteBuffer.length - 1 : quoteIndex.value - 1;
+
+/** Получить индекс следующей цитаты */
+const getNextQuoteIndex = () => quoteIndex.value + 1 >= quoteBuffer.length ? 0 : quoteIndex.value + 1;
+
+/**
+ * Перезапуск таймера смены цитаты.
+ */
+const restartQuoteChangingTimer = () => {
   clearInterval(interval);
-})
-
-const restartTimerS = () => {
-  clearInterval(interval);
-  clearTimeout(showTimer);
-  clearTimeout(hideTimer);
-  interval = setInterval(() => {
-    quote.value = getRanomFromArray(QuotesList.filter((item) => {
-      return quote.value !== item;
-    }))
-    showTimer = setTimeout(() => {
-      show.value = true;
-    }, 0);
-    hideTimer = setTimeout(() => {
-      show.value = false;
-    }, 10000);
-  }, 12000)
+  interval = setInterval(nextQuote, TIME_FOR_QUOTE_AUTOCHANGE_SHOWING)
 }
 
-const nextQuote = () => {
-  show.value = false;
-  setTimeout(() => {
-    const index = QuotesList.indexOf(toRaw(quote.value));
-    const newIndex = index === QuotesList.length - 1 ? 0 : index + 1;
-    quote.value = QuotesList[newIndex];
-    show.value = true;
-    restartTimerS();
-  }, 1500);
-
+/**
+ * Переключение на следующую цитату
+ */
+const nextQuote = async () => {
+  restartQuoteChangingTimer();
+  await animationService.hide();
+  quoteIndex.value = getNextQuoteIndex();
+  currentQuote = quoteBuffer[quoteIndex.value];
+  await animationService.show();
 }
 
-const prevQuote = () => {
-  show.value = false;
-  setTimeout(() => {
-    const index = QuotesList.indexOf(toRaw(quote.value));
-    const newIndex = index === 0 ? QuotesList.length - 1 : index - 1;
-    quote.value = QuotesList[newIndex];
-    show.value = true;
-    restartTimerS();
-  }, 1500);
+/**
+ * Переключение на предыдущую цитату
+ */
+const prevQuote = async () => {
+  restartQuoteChangingTimer();
+  await animationService.hide();
+  quoteIndex.value = getPrevQuoteIndex();
+  currentQuote = quoteBuffer[quoteIndex.value];
+  await animationService.show();
 }
 
-restartTimerS();
+/*
+ * По дефолту запускаем анимацию, чтобы после загрузки страницы
+ * пользователь увидел анимацию подгрузки первой цитаты.
+ *
+ * Обновляем таймеры, чтобы начала работать автосмена цитат
+ */
+restartQuoteChangingTimer();
+animationService.show();
 
 </script>
 
@@ -69,19 +84,18 @@ restartTimerS();
     <div class="body" :class="{ show }">
       <div class="body-top">
         <div class="image">
-          <img :src="quote.imageUrl" :alt="quote.author" />
+          <img :src="currentQuote.imageUrl" :alt="currentQuote.author"/>
         </div>
       </div>
 
       <div class="text">
-        {{ quote.text }}
+        {{ currentQuote.text }}
       </div>
       <div class="author">
-        {{ quote.author }}
+        {{ currentQuote.author }}
       </div>
     </div>
     <div class="bottom">
-      
       <button class="btn" @click="prevQuote()">Пред. цитата</button>
       <button class="btn" @click="nextQuote()">След. цитата</button>
     </div>
@@ -115,7 +129,7 @@ main {
 .top {
   display: grid;
   justify-content: center;
-  
+
   column-gap: 8px;
 }
 
@@ -125,7 +139,7 @@ main {
   padding: 16px;
   row-gap: 16px;
   opacity: 0;
-  transition: opacity 2s;
+  transition: opacity 0.7s;
 }
 
 .body.show {
@@ -140,10 +154,7 @@ main {
 
 .image {
   display: grid;
-  /* overflow: hidden; */
-  /* border-radius: 32px; */
   box-shadow: inset 0 0 3px 1px var(--color-background);
-  /* box-shadow: inset 10px 10px 5px 29px rgba(0,0,0,0.86); */
 }
 
 .image img {
@@ -153,7 +164,7 @@ main {
   filter: sepia(61%);
   margin: auto;
   border-radius: 32px;
-  box-shadow: inset 0px 0px 10px 15px var(--color-background);
+  box-shadow: inset 0 0 10px 15px var(--color-background);
 }
 
 .image::after {
@@ -164,7 +175,7 @@ main {
   right: -3px;
   bottom: -3px;
   border-radius: 32px;
-  box-shadow: inset 0px 0px 10px 15px var(--color-background);
+  box-shadow: inset 0 0 10px 15px var(--color-background);
 }
 
 .text {
@@ -180,7 +191,7 @@ main {
   text-align: right;
 }
 
-.bottom  {
+.bottom {
   display: grid;
   justify-content: center;
   grid-template-columns: 1fr 1fr;
