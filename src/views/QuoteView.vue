@@ -1,9 +1,15 @@
 <script setup lang="ts">
 import { onBeforeUnmount, ref } from 'vue';
-import { QuotesList } from '../data/quotes'
-import { shuffleArray, } from '../services/utils'
+import { QuotesList, QuoteRecord } from '../data/quotes'
+import { shuffleArray, getPrevIndex, getNextIndex } from '../services/utils'
 import AnimationQuoteService from "../services/AnimationQuoteService";
-import { TIME_FOR_QUOTE_AUTOCHANGE_SHOWING, TIME_FOR_FADE_IN, TIME_FOR_FADE_OUT } from "../config/quote/animation";
+import {
+  TIME_FOR_QUOTE_AUTOCHANGE_SHOWING,
+  TIME_FOR_FADE_IN,
+  TIME_FOR_FADE_OUT,
+  TIME_DELAY_BEFORE_QUOTE_CHANGING,
+  TIME_DELAY_AFTER_QUOTE_CHANGING
+} from "../config/quote/animation";
 
 /** Пересортированные данные цитат для сессии пользователя */
 const quoteBuffer = shuffleArray(QuotesList);
@@ -15,7 +21,9 @@ const quoteIndex = ref(0);
 const show = ref(false);
 
 /** Текущий объект цитаты, котоырй мы отрисовываем */
-let currentQuote = quoteBuffer[quoteIndex.value];
+let currentQuote = ref<QuoteRecord>(quoteBuffer[0]);
+// let prevQuote = quoteBuffer[getPrevIndex(quoteIndex.value, QuotesList.length)];
+// let nextQuote = quoteBuffer[getNextIndex(quoteIndex.value, QuotesList.length)];
 
 /** Текущий таймер, по которому происходит смена цитат */
 let interval: number;
@@ -29,12 +37,6 @@ onBeforeUnmount(() => {
   animationService.kill();
 });
 
-/** Получить индекс предыдущей цитаты */
-const getPrevQuoteIndex = () => quoteIndex.value - 1 < 0 ? quoteBuffer.length - 1 : quoteIndex.value - 1;
-
-/** Получить индекс следующей цитаты */
-const getNextQuoteIndex = () => quoteIndex.value + 1 >= quoteBuffer.length ? 0 : quoteIndex.value + 1;
-
 /**
  * Перезапуск таймера смены цитаты.
  */
@@ -42,30 +44,36 @@ const restartQuoteChangingTimer = () => {
   clearTimeout(interval);
   // interval = setInterval(nextQuote, TIME_FOR_QUOTE_AUTOCHANGE_SHOWING) 
   interval = setTimeout(() => {
-    nextQuote()
+    onNextQuote()
   }, TIME_FOR_QUOTE_AUTOCHANGE_SHOWING)
+}
+
+const updateQuotesState = (newIndex: number) => {
+  console.log('new index');
+  quoteIndex.value = newIndex;
+  currentQuote.value = quoteBuffer[newIndex];
+  // prevQuote = quoteBuffer[getPrevIndex(quoteIndex.value, QuotesList.length)];
+  // nextQuote = quoteBuffer[getNextIndex(quoteIndex.value, QuotesList.length)];
 }
 
 /**
  * Переключение на следующую цитату
  */
-const nextQuote = async () => {
+const onNextQuote = async () => {
   restartQuoteChangingTimer();
-  await animationService.hide(50);
-  quoteIndex.value = getNextQuoteIndex();
-  currentQuote = quoteBuffer[quoteIndex.value];
-  animationService.show(50);
+  await animationService.hide(0, TIME_DELAY_BEFORE_QUOTE_CHANGING);
+  updateQuotesState(getNextIndex(quoteIndex.value, QuotesList.length))
+  animationService.show(TIME_DELAY_AFTER_QUOTE_CHANGING);
 }
 
 /**
  * Переключение на предыдущую цитату
  */
-const prevQuote = async () => {
+const onPrevQuote = async () => {
   restartQuoteChangingTimer();
-  await animationService.hide();
-  quoteIndex.value = getPrevQuoteIndex();
-  currentQuote = quoteBuffer[quoteIndex.value];
-  animationService.show(50);
+  await animationService.hide(0, TIME_DELAY_BEFORE_QUOTE_CHANGING);
+  updateQuotesState(getPrevIndex(quoteIndex.value, QuotesList.length))
+  animationService.show(TIME_DELAY_AFTER_QUOTE_CHANGING);
 
 }
 
@@ -75,12 +83,16 @@ const prevQuote = async () => {
  *
  * Обновляем таймеры, чтобы начала работать автосмена цитат
  */
+// updateQuotesState(quoteIndex.value);
 restartQuoteChangingTimer();
 animationService.show();
 
 </script>
 
 <template>
+  <!-- <link v-for="q in QuotesList" rel="prefetch prerender" :href="q.imageUrl" /> -->
+  <!-- <link rel="prefetch prerender" :href="prevQuote.imageUrl" />
+  <link rel="prefetch prerender" :href="nextQuote.imageUrl" /> -->
   <main>
     <div class="top">
       <button class="btn" @click="$router.push('/')">На главную</button>
@@ -100,8 +112,8 @@ animationService.show();
       </div>
     </div>
     <div class="bottom">
-      <button class="btn" @click="prevQuote()">Пред. цитата</button>
-      <button class="btn" @click="nextQuote()">След. цитата</button>
+      <button class="btn" @click="onPrevQuote()">Пред. цитата</button>
+      <button class="btn" @click="onNextQuote()">След. цитата</button>
     </div>
   </main>
 </template>

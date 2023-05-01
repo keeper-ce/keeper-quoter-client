@@ -7,7 +7,7 @@ import EgorImage from '../assets/images/quotesImages/Egor.jpg'
 import AntonImage from '../assets/images/quotesImages/Anton2.jpg'
 import TimofeyImage from '../assets/images/quotesImages/Timofey2.jpg'
 
-type QuoteRecord = {
+export type QuoteRecord = {
     author: string,
     text: string,
     imageUrl: string

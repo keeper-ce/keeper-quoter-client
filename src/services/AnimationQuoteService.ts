@@ -42,7 +42,6 @@ class AnimationQuoteService {
      * @return {Promise<void>}
      */
     #fadeOut() {
-        console.log(this.timeForFadeOut);
         return new Promise<void>((resolve) => {
             this.visibilityState.value = false;
             this.currentTimer = setTimeout(() => resolve(), this.timeForFadeOut);
@@ -79,20 +78,20 @@ class AnimationQuoteService {
         if (delay) {
             await this.#hold(delay)
         }
-        await this.#fadeIn();
+        return await this.#fadeIn();
     }
 
     /**
      * Спрятать предыдущую цитату
      * @return {Promise<void>}
      */
-    async hide(delay = 0) {
+    async hide(delay = 0, delayAfter = 0) {
         this.#startNewAction();
         if (delay) {
             await this.#hold(delay)
         }
         await this.#fadeOut();
-            // await this.#hold(TIME_FOR_QUOTE_CHANGING);
+        return await this.#hold(delayAfter);
     }
 
     /**

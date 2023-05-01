@@ -7,3 +7,8 @@ export const shuffleArray = <T>(array: Array<T>): T[] => {
         .sort((a, b) => a.sort - b.sort)
         .map(({ value }) => value);
 }
+
+export const getPrevIndex = (index: number, length: number) => index - 1 < 0 ? length - 1 : index - 1;
+
+/** Получить индекс следующей цитаты */
+export const getNextIndex = (index: number, length: number) => index + 1 >= length ? 0 : index + 1;
